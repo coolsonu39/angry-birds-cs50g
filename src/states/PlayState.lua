@@ -18,6 +18,10 @@ function PlayState:update(dt)
         love.event.quit()
     end
 
+    if love.keyboard.wasPressed('return') then
+        gStateMachine:change('start')
+    end
+
     -- update camera
     if love.keyboard.isDown('left') then
         self.levelTranslateX = self.levelTranslateX + MAP_SCROLL_X_SPEED * dt

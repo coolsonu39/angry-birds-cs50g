@@ -26,7 +26,11 @@ function AlienLaunchMarker:init(world)
     self.launched = false
 
     -- our alien we will eventually spawn
-    self.alien = nil
+    -- self.alien = nil --original
+    self.aliens = {} --spec1
+
+    self.canSplit = true --spec1
+    self.hasSplitted = false --spec1
 end
 
 function AlienLaunchMarker:update(dt)
@@ -46,14 +50,22 @@ function AlienLaunchMarker:update(dt)
             self.launched = true
 
             -- spawn new alien in the world, passing in user data of player
-            self.alien = Alien(self.world, 'round', self.shiftedX, self.shiftedY, 'Player')
+            -- self.alien = Alien(self.world, 'round', self.shiftedX, self.shiftedY, 'Player') --original
+            table.insert(self.aliens, Alien(self.world, 'round', self.shiftedX, self.shiftedY, 'Player'))
 
-            -- apply the difference between current X,Y and base X,Y as launch vector impulse
-            self.alien.body:setLinearVelocity((self.baseX - self.shiftedX) * 10, (self.baseY - self.shiftedY) * 10)
+            --original
+            -- -- apply the difference between current X,Y and base X,Y as launch vector impulse
+            -- self.alien.body:setLinearVelocity((self.baseX - self.shiftedX) * 10, (self.baseY - self.shiftedY) * 10)
 
-            -- make the alien pretty bouncy
-            self.alien.fixture:setRestitution(0.4)
-            self.alien.body:setAngularDamping(1)
+            -- -- make the alien pretty bouncy
+            -- self.alien.fixture:setRestitution(0.4)
+            -- self.alien.body:setAngularDamping(1)
+
+            for k, alien in pairs(self.aliens) do
+                alien.body:setLinearVelocity((self.baseX - self.shiftedX) * 10, (self.baseY - self.shiftedY) * 10)
+                alien.fixture:setRestitution(0.4)
+                alien.body:setAngularDamping(1)
+            end
 
             -- we're no longer aiming
             self.aiming = false
@@ -64,6 +76,15 @@ function AlienLaunchMarker:update(dt)
             self.shiftedX = math.min(self.baseX + 30, math.max(x, self.baseX - 30))
             self.shiftedY = math.min(self.baseY + 30, math.max(y, self.baseY - 30))
         end
+    elseif love.keyboard.wasPressed('space') and self.canSplit then --spec1
+        gSounds['split']:play()
+        local x, y = self.aliens[1].body:getPosition()
+        local dx, dy = self.aliens[1].body:getLinearVelocity()
+        table.insert(self.aliens, Alien(self.world, 'round', x, y + 30, 'Player'))
+        table.insert(self.aliens, Alien(self.world, 'round', x, y - 30, 'Player'))
+        self.aliens[2].body:setLinearVelocity(dx, dy + 10)
+        self.aliens[3].body:setLinearVelocity(dx, dy - 10)
+        self.canSplit = false --to only splitting only once
     end
 end
 
@@ -103,6 +124,8 @@ function AlienLaunchMarker:render()
         
         love.graphics.setColor(1, 1, 1, 1)
     else
-        self.alien:render()
+        for k, alien in pairs(self.aliens) do
+            alien:render()
+        end
     end
 end
